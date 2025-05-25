@@ -1,0 +1,7 @@
+Flask
+flask-cors
+flask-apscheduler
+google-generativeai
+python-dotenv
+requests
+googletrans==4.0.0-rc1
