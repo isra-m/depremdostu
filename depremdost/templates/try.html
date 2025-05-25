@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Deprem Dostum - Earthquake Guard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <!-- Leaflet Styles -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
+  <!-- Leaflet Scripts -->
+  <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.min.js"></script>
+  <style>
+    :root {
+      --primary: #d41c1c;
+      --accent: #FFB74D;
+      --light: #ffffff;
+      --text: #1a1a1a;
+      --radius: 1rem;
+      --shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    html, body {
+      font-family: 'Inter', sans-serif;
+      background: var(--light);
+      color: var(--text);
+      scroll-behavior: smooth;
+      line-height: 1.6;
+    }
+    nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--primary);
+      padding: 1.5rem 3rem;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      color: var(--light);
+      box-shadow: var(--shadow);
+    }
+    nav .logo {
+      font-weight: 700;
+      font-size: 1.8rem;
+      margin-top: 0.5rem;
+    }
+    nav ul {
+      display: flex;
+      gap: 2.5rem;
+      list-style: none;
+    }
+    nav ul li a {
+      color: var(--light);
+      text-decoration: none;
+      font-weight: 500;
+      font-size: 1rem;
+      position: relative;
+    }
+    nav ul li a::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      bottom: -4px;
+      width: 0;
+      height: 2px;
+      background: var(--light);
+      transition: width 0.3s ease;
+    }
+    nav ul li a:hover::after {
+      width: 100%;
+      background: var(--accent);
+    }
+    section {
+      padding: 7rem 2rem;
+      max-width: 1100px;
+      margin: 4rem auto;
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+    section.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .hero {
+      background: var(--primary);
+      color: var(--light);
+      text-align: center;
+      padding: 7rem 2rem;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      background-image: linear-gradient(to right, #8B0000, #a30000);
+    }
+    .hero h1 {
+      font-size: 3.4rem;
+      margin-bottom: 1.2rem;
+    }
+    .hero p {
+      font-size: 1.3rem;
+      margin-bottom: 2.5rem;
+    }
+    .btn-group {
+      display: flex;
+      justify-content: center;
+      gap: 1.2rem;
+      flex-wrap: wrap;
+    }
+    .btn-group button {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      background: var(--light);
+      color: var(--primary);
+      padding: 0.85rem 1.7rem;
+      font-size: 1rem;
+      border-radius: 999px;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      transition: background 0.3s ease, transform 0.2s ease;
+    }
+    .btn-group button i {
+      font-size: 1.2rem;
+    }
+    .btn-group button:hover {
+      background: var(--accent);
+      color: var(--primary);
+      transform: translateY(-2px);
+    }
+    .section-title {
+      text-align: center;
+      font-size: 2.2rem;
+      margin-bottom: 2.5rem;
+      color: var(--primary);
+    }
+    #map-container {
+      width: 100%;
+      height: 400px;
+      border-radius: var(--radius);
+      background: #e0e0e0;
+      box-shadow: var(--shadow);
+    }
+    .voice-wrapper, .form-wrapper {
+      background: #f4f6fa;
+      padding: 3rem;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      text-align: center;
+    }
+    .submit-btn, .mic-button {
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      gap: 0.6rem;
+      background: var(--primary);
+      color: var(--light);
+      border: none;
+      padding: 0.9rem 1.8rem;
+      border-radius: 2rem;
+      cursor: pointer;
+      font-weight: 600;
+      transition: background 0.3s ease, transform 0.2s ease;
+    }
+    .submit-btn:hover, .mic-button:hover {
+      background: var(--accent);
+      color: var(--primary);
+      transform: scale(1.05);
+    }
+    footer {
+      background: var(--primary);
+      color: var(--light);
+      text-align: center;
+      padding: 4rem 2rem;
+      margin-top: 6rem;
+      border-top: 5px solid var(--accent);
+      font-size: 1rem;
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="logo" style="display: flex; align-items: center; gap: 0.6rem;">
+      <img src="/static/css/images/IMG.png" alt="Deprem Dostum Logo" style="height: 106px;">
+    </div>
+    <ul>
+      <li><a href="#home">Ana Sayfa</a></li>
+      <li><a href="#map">Harita</a></li>
+      <li><a href="#voice">Asistan</a></li>
+      <li><a href="#contact">İletişim</a></li>
+    </ul>
+  </nav>
+
+  <section class="hero" id="home">
+    <div style="max-width: 700px; margin: 0 auto 2.5rem auto; font-size: 1.1rem; background: #fff0f0; padding: 1rem 1.5rem; border-radius: var(--radius); color: var(--primary); box-shadow: var(--shadow);">
+      <strong>Amacımız:</strong> Deprem anında ihtiyaç duyduğunuz bilgileri ve araçları tek bir platformda sunmak: sesli yardım, konum paylaşımı, ve güvenli bölge haritası.
+    </div>
+    <h1><span style="color: var(--accent);">Deprem</span> <span style="color: var(--light);">Dostum</span></h1>
+    <p>Deprem sırasında sizi bilgilendiren, güvenli bölgeleri gösteren ve sesli komutları algılayan yardımcınız.</p>
+    <div class="btn-group">
+      <button onclick="document.getElementById('voice').scrollIntoView({ behavior: 'smooth' })">
+        <i class="fas fa-microphone"></i> Asistan
+      </button>
+      <button onclick="document.getElementById('map').scrollIntoView({ behavior: 'smooth' })">
+        <i class="fas fa-map-marked-alt"></i> Harita
+      </button>
+    </div>
+  </section>
+
+  <section id="map">
+    <h2 class="section-title">Güvenli Bölge Haritası</h2>
+    <p style="text-align:center; max-width:600px; margin: 0 auto 2rem auto; font-size: 1.05rem;">En yakın güvenli toplanma alanlarını haritada görebilirsiniz. Lütfen konum izninizi açmayı unutmayın.</p>
+    <div id="map-container"></div>
+<script>
+  function initializeMap() {
+    if (!navigator.geolocation) {
+      alert("Tarayıcınız konum özelliğini desteklemiyor.");
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(position => {
+      const lat = position.coords.latitude;
+      const lon = position.coords.longitude;
+      const map = L.map('map-container').setView([lat, lon], 13);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap Katkıcıları'
+      }).addTo(map);
+
+      const safeZones = [
+        { name: "Park Shelter", coords: [lat + 0.002, lon + 0.003] },
+        { name: "Community Center", coords: [lat - 0.003, lon - 0.002] },
+        { name: "High School Gym", coords: [lat + 0.0015, lon - 0.004] }
+      ];
+
+      L.marker([lat, lon]).addTo(map).bindPopup('Bulunduğunuz konum').openPopup();
+
+      safeZones.forEach(zone => {
+        L.marker(zone.coords).addTo(map).bindPopup(`<b>${zone.name}</b>`);
+      });
+
+      L.Routing.control({
+        waypoints: [
+          L.latLng(lat, lon),
+          L.latLng(safeZones[0].coords[0], safeZones[0].coords[1])
+        ],
+        routeWhileDragging: true
+      }).addTo(map);
+    }, () => {
+      alert("Konum alınamadı.");
+    });
+  }
+  window.onload = initializeMap;
+</script>
+  </section><section id="voice" class="voice-wrapper">
+    <h2 class="section-title">Sesli Asistan</h2>
+    <p style="font-size: 1.1rem; margin-bottom: 1.5rem;">Bu asistan, deprem sırasında sizi bilgilendiren ve yönlendiren bir rehberdir.</p>
+    <button class="mic-button" onclick="startVoiceInput()">
+      <i class="fas fa-microphone"></i> Dinlemeye Başla
+    </button>
+   
+
+  </section>
+
+  <section id="contact" class="form-wrapper">
+    <h2 class="section-title">Acil Durum Konum Paylaşımı</h2>
+    <p style="font-size: 1.1rem; margin-bottom: 2rem;">Deprem sonrası güvende olup olmadığınızı hızlıca bildirmeniz çok önemli. Aşağıdaki butona basarak canlı konumunuzu sevdiklerinize gönderin.</p>
+    <button class="submit-btn" style="margin-top: 1rem; padding: 1.1rem 2rem; font-size: 1.05rem;" onclick="sendEmergencyLocation()">
+      <i class="fas fa-location-arrow"></i> Konumumu Güvenli Şekilde Paylaş
+    </button>
+     <button class="submit-btn" onclick="sendLocationViaEmail()">
+    <i class="fas fa-envelope"></i> Konumumu E-posta ile Gönder
+</button>
+    <div id="locationStatus" style="margin-top: 2rem; font-size: 1.05rem; color: var(--primary);"></div>
+    <nav style="height: 60px; background: #fff; display: flex; align-items: center; padding: 0 20px;">
+
+</nav>
+  </section>
+
+  <script>
+    function sendEmergencyLocation() {
+      const statusDiv = document.getElementById('locationStatus');
+      if (navigator.geolocation) {
+        statusDiv.textContent = "Konum alınıyor...";
+        navigator.geolocation.getCurrentPosition(position => {
+          const lat = position.coords.latitude;
+          const lon = position.coords.longitude;
+          const message = `Acil durum konumum: https://www.google.com/maps?q=${lat},${lon}`;
+          // Here you would integrate actual message sending via backend or SMS/email API
+          statusDiv.innerHTML = `<strong>Paylaşıldı:</strong> <a href='https://www.google.com/maps?q=${lat},${lon}' target='_blank'>Konumu görüntüle</a>`;
+        }, () => {
+          statusDiv.textContent = "Konum alınamadı. Lütfen konum izinlerini kontrol edin.";
+        });
+      } else {
+        statusDiv.textContent = "Tarayıcınız konum paylaşımını desteklemiyor.";
+      }
+    }
+  </script>
+
+  <footer>
+    <div style="max-width: 1100px; margin: auto;">
+      <p style="font-size: 1.1rem; margin-bottom: 1rem; font-weight: 600;">&copy; 2025 Deprem Dostum. Tüm hakları saklıdır.</p>
+      <p style="margin-bottom: 0.5rem;">Veri kaynakları:</p>
+      <p>
+        <a href="https://deprem.afad.gov.tr" style="color: #aadfff; text-decoration: none;">AFAD</a> |
+        <a href="https://earthquake.usgs.gov" style="color: #aadfff; text-decoration: none;">USGS</a> |
+        <a href="https://www.emsc-csem.org" style="color: #aadfff; text-decoration: none;">EMSC</a>
+      </p>
+    </div>
+  </footer>
+
+  <script>
+  function speakText(text) {
+    if ('speechSynthesis' in window) {
+      const utterance = new SpeechSynthesisUtterance(text);
+      preferredVoice = voices.find(voice =>
+      voice.lang.startsWith("tr") && voice.name.toLowerCase().includes("female")
+    ) || voices.find(voice => voice.lang.startsWith("tr"));
+
+      window.speechSynthesis.speak(utterance);
+    }
+  }
+
+  function startVoiceInput() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert("Tarayıcınız konuşma tanımayı desteklemiyor.");
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.onresult = (event) => {
+      const text = event.results[0][0].transcript;
+      
+      const output = document.createElement('p');
+      output.textContent = `Algılanan komut: ${text}`;
+      document.getElementById('voice').appendChild(output);
+
+      fetch('http://localhost:5000/process', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ input: text })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.response) {
+          speakText(data.response);
+          const response = document.createElement('p');
+          response.textContent = `Yanıt: ${data.response}`;
+          document.getElementById('voice').appendChild(response);
+        }
+      })
+      .catch(error => {
+        console.error("Hata:", error);
+        const errMsg = document.createElement('p');
+        errMsg.textContent = "Sunucuya bağlanılamadı.";
+        document.getElementById('voice').appendChild(errMsg);
+      });
+    };
+
+    recognition.onerror = function(event) {
+      console.error("Recognition error: ", event.error);
+      const errOutput = document.createElement('p');
+      errOutput.textContent = "Konuşma tanıma sırasında hata oluştu.";
+      document.getElementById('voice').appendChild(errOutput);
+    };
+
+    recognition.start();
+  }
+
+  // Observer animation
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+      }
+    });
+  }, { threshold: 0.1 });
+
+  document.querySelectorAll('section').forEach(section => observer.observe(section));
+  async function checkEarthquakeAlerts() {
+    try {
+      const res = await fetch('http://localhost:5000/earthquakes');
+      const data = await res.json();
+      const alerts = data.new_alerts;
+
+      alerts.forEach(event => {
+        const message = `📢 EARTHQUAKE WARNING! ${event.magnitude} MAGNITUDE - ${event.location} BE SAFE AND KINDLY FIND THE SAFE LOCATIONS FROM THE MAP`;
+        showNotification(message);
+        speakText(message);
+      });
+    } catch (error) {
+      console.error('Uyarılar alınamadı:', error);
+    }
+  }
+    // Ask for notification permission
+    if ('Notification' in window && Notification.permission !== 'granted') {
+      Notification.requestPermission().then(permission => {
+        console.log('Bildirim izni:', permission);
+      });
+    }
+
+    // Test notification
+    function showNotification(message) {
+      if (Notification.permission === 'granted') {
+        new Notification('Deprem Dostum Uyarısı', { body: message });
+      }
+    }
+
+    // Speak message
+    function speakText(text) {
+      if ('speechSynthesis' in window) {
+        const utterance = new SpeechSynthesisUtterance(text);
+        window.speechSynthesis.speak(utterance);
+      }
+    }
+  function sendLocationViaEmail() {
+    if (!navigator.geolocation) {
+      alert("Tarayıcınız konum paylaşımını desteklemiyor.");
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(position => {
+      const lat = position.coords.latitude;
+      const lon = position.coords.longitude;
+      const subject = encodeURIComponent("Acil Durum Konumu");
+      const body = encodeURIComponent(`Acil durum konumum:\n📍 https://www.google.com/maps?q=${lat},${lon}`);
+      const mailtoLink = `mailto:?subject=${subject}&body=${body}`;
+
+      window.location.href = mailtoLink;
+    }, () => {
+      alert("Konum alınamadı. Lütfen izin verdiğinizden emin olun.");
+    });
+  }
+
+
+    // Periodic alert check
+    async function checkEarthquakeAlerts() {
+      try {
+        const res = await fetch('http://localhost:5000/earthquakes');
+        const data = await res.json();
+        const alerts = data.new_alerts;
+
+        alerts.forEach(event => {
+          const message = `📢 Deprem Uyarısı! ${event.magnitude} büyüklüğünde deprem - ${event.location}`;
+          showNotification(message);
+          speakText(message);
+        });
+      } catch (error) {
+        console.error('Uyarılar alınamadı:', error);
+      }
+    }
+
+    setInterval(checkEarthquakeAlerts, 90000);
+  </script>
+
+</body>
+</html>
